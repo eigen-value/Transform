@@ -1,0 +1,22 @@
+{
+  "name": "Transform",
+  "keywords": "Signal transforms, FFT",
+  "description": "A library for implementing all integer signal transofrms",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/eigen-value/Transform"
+  },
+  "authors":
+  [
+    {
+      "name": "Lucio Rossi",
+      "email": "l.rossi@ext.arduino.cc",
+      "maintainer": true
+    }
+  ],
+  "version": "0.1",
+  "frameworks": ["arduino","mbed","espidf"],
+  "platforms": "*",
+  "headers": "Transform.h"
+}

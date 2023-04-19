@@ -21,6 +21,64 @@
 #include "Arduino.h"
 #include "Transform.h"
 
+
+IntSignal::IntSignal(int32_t* real_in, int32_t* imag_in, uint16_t samples) {
+	
+	_samples = samples;
+	real = real_in;
+	imag = imag_in;
+
+}
+
+IntSignal::~IntSignal(void) {
+  // Destructor
+}
+
+void IntSignal::scale2(int8_t pow) {
+	
+	_scale_pow += pow;
+	
+	if (pow < 0) {
+		for (uint16_t i=0; i<_samples; i++) {
+			real[i] = real[i]>>-pow;
+		}
+	} else if (pow > 0) {
+		for (uint16_t i=0; i<_samples; i++) {
+			real[i] = real[i]<<pow;
+		}
+	}
+	
+}
+
+
+uint16_t IntSignal::getSamples() {
+	return _samples;
+}
+
+/* Transform class*/
+
+Transform::Transform(void) {
+  // Constructor
+}
+
+Transform::~Transform(void) {
+  // Destructor
+}
+
+void Transform::printSignal(IntSignal& signal) {
+	
+	_debug->println("real | imag");
+	for (uint16_t i=0; i<signal.getSamples(); i++) {
+		
+		_debug->print(signal.real[i]);
+		_debug->print(" | ");
+		_debug->println(signal.imag[i]);
+		
+	}
+	
+}
+
+
 void Transform::debug(Stream& stream) {
 	_debug = &stream;
 }

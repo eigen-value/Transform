@@ -23,18 +23,37 @@
 
 #include <Arduino.h>
 
+class IntSignal {
+	
+	public:
+	IntSignal(int32_t* real_in, int32_t* imag_in, uint16_t samples);
+	~IntSignal();
+	int32_t* real = nullptr;
+	int32_t* imag = nullptr;
+	void scale2(int8_t pow);
+	uint16_t getSamples();
+
+	private:
+	uint16_t _samples;
+	int16_t _scale_pow = 0;		// !=0 if signal is scaled by a power of 2
+	int32_t _avg = 0;			// stored average. !=0 if signal avg has been removed
+	
+};
+
 class Transform {
 	
 	public:
-	/* Constructor */
 	Transform();
-	
+	~Transform();
+
 	void debug(Stream&);
+	// void FFT(IntSignal& signal);
+	// void InverseBit(IntSignal& signal);
+	void printSignal(IntSignal& signal);
 	
-	/* Destructor */
 	private:
 	Stream *_debug = nullptr;
 	
-}
+};
 
 #endif
