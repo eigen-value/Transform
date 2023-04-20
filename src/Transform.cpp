@@ -65,6 +65,50 @@ Transform::~Transform(void) {
   // Destructor
 }
 
+uint16_t Transform::log2(uint16_t n) {
+
+	uint16_t out = 0;
+	while (n>1) {
+		n>>=1;
+		out++;
+	}
+
+	return out;
+
+}
+
+uint32_t Transform::reverse_bits(uint32_t x, int bits) {
+	x = ((x & 0x55555555) << 1) | ((x & 0xAAAAAAAA) >> 1); // Swap _<>_
+    x = ((x & 0x33333333) << 2) | ((x & 0xCCCCCCCC) >> 2); // Swap __<>__
+    x = ((x & 0x0F0F0F0F) << 4) | ((x & 0xF0F0F0F0) >> 4); // Swap ____<>____
+    x = ((x & 0x00FF00FF) << 8) | ((x & 0xFF00FF00) >> 8); // Swap ...
+    x = ((x & 0x0000FFFF) << 16) | ((x & 0xFFFF0000) >> 16); // Swap ...
+    return x >> (32 - bits);
+}
+
+void Transform::InverseBit(int32_t* v, uint16_t size) {
+	
+	for (uint16_t i=0; i<size; i++) {
+		_debug->print(v[i]);
+		_debug->print(",");
+	}
+	_debug->println();
+
+	for (uint16_t i=0; i<size>>1; i++) {
+		int32_t temp = v[i];
+		uint16_t i_reverse = reverse_bits(i, log2(size));
+		v[i] = v[i_reverse];
+		v[i_reverse] = temp;
+	}
+
+	for (uint16_t i=0; i<size; i++) {
+		_debug->print(v[i]);
+		_debug->print(",");
+	}
+	_debug->println();
+
+}
+
 void Transform::printSignal(IntSignal& signal) {
 	
 	_debug->println("real | imag");

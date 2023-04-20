@@ -24,7 +24,7 @@
 
 #include "Transform.h"
 
-const uint16_t samples = 2;
+const uint16_t samples = 8;
 const uint16_t signal_max = 32000;
 
 int32_t real[samples];
@@ -39,7 +39,7 @@ void setup() {
 void loop() {
 	
 	for (uint16_t i=0; i<samples; i++) {
-		real[i] = random(signal_max);
+		real[i] = i;
 		imag[i] = 0;
 	}
 	
@@ -47,5 +47,9 @@ void loop() {
   
 	transformer.printSignal(signal);
 	
+	Serial.println("Reverse-bit representation");
+	transformer.InverseBit(signal.real, samples);
+	transformer.printSignal(signal);
+
 	delay(9999);
 }

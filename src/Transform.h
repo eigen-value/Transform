@@ -48,10 +48,12 @@ class Transform {
 
 	void debug(Stream&);
 	// void FFT(IntSignal& signal);
-	// void InverseBit(IntSignal& signal);
+	uint16_t log2(uint16_t n);
+	void InverseBit(int32_t* v, uint16_t size);
 	void printSignal(IntSignal& signal);
 	
 	private:
+	uint32_t reverse_bits(uint32_t x, int bits);
 	Stream *_debug = nullptr;
 	
 };
