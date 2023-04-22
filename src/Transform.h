@@ -21,7 +21,32 @@
 #ifndef Transform_H
 #define Transform_H
 
+/* arcsin lookup table for the fast, binary section, sin and cos approximate algorithms. This table must 
+be 2^TRIG_ACCURACY_MAX (TRIG_UNITY) in size and the elements should span from 0 to TWOPI_DIVISIONS/4.
+Ex. if TRIG_ACCURACY_MAX is 7 the unity is divided into 128 intervals and if 
+TWO_PI_DIVISIONS is 1024 then 0-pi/2 must correspond to 0-256 (roughly)
+ */
+static const byte arcsin_data[128] =
+{ 0,  1,   3,   4,   5,   6,   8,   9,   10,  11,  13,  14,  15,  17,  18,  19,  20,
+  22,  23,  24,  26,  27,  28,  29,  31,  32,  33,  35,  36,  37,  39,  40,  41,  42,
+  44,  45,  46,  48,  49,  50,  52,  53,  54,  56,  57,  59,  60,  61,  63,  64,  65,
+  67,  68,  70,  71,  72,  74,  75,  77,  78,  80,  81,  82,  84,  85,  87,  88,  90,
+  91,  93,  94,  96,  97,  99,  100, 102, 104, 105, 107, 108, 110, 112, 113, 115, 117,
+  118, 120, 122, 124, 125, 127, 129, 131, 133, 134, 136, 138, 140, 142, 144, 146, 148,
+  150, 152, 155, 157, 159, 161, 164, 166, 169, 171, 174, 176, 179, 182, 185, 188, 191,
+  195, 198, 202, 206, 210, 215, 221, 227, 236
+};
+
 #include <Arduino.h>
+
+#define TRIG_ACCURACY_MAX 7
+#define TRIG_UNITY 128			// must be = 2^TRIG_ACCURACY_MAX
+#define SIGNAL_LEN_MAX 1024		// must be = TWOPI_DIVISIONS
+#define TWOPI_DIVISIONS 1024
+#define PI_DIVISIONS 512
+#define HALFPI_DIVISIONS 256
+#define THREEHALFPI_DIVISIONS 768
+
 
 class IntSignal {
 	
@@ -47,8 +72,11 @@ class Transform {
 	~Transform();
 
 	void debug(Stream&);
-	// void FFT(IntSignal& signal);
+	void FFT(IntSignal& signal, uint8_t accuracy);
 	uint16_t log2(uint16_t n);
+	int32_t approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy);
+	int32_t approx_cos_proj(int32_t A, int32_t theta_divs, uint8_t accuracy);
+	int32_t unwind(int32_t theta_divs);
 	void InverseBit(int32_t* v, uint16_t size);
 	void printSignal(IntSignal& signal);
 	
