@@ -125,15 +125,15 @@ int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accura
 	}
 
 
-	// unwinding for lesser-than-0 bigger-than-2pi theta angles
-	theta_divs = unwind(theta_divs);
-
+	// unwraping for lesser-than-0 bigger-than-2pi theta angles
+	theta_divs = unwrap(theta_divs);
+	_debug->print("theta after unwrap: ");
+	_debug->println(theta_divs);
 
 	// Everything can be reduced to the 1st quadrant case (0-pi/2)
-	int32_t quad = theta_divs;
-	while(quad>3) {		// theta quadrant
-		quad>>=1;
-	}
+	int32_t quad = theta_divs>>HALFPI_DIVISIONS_LOG2; // theta quadrant
+	_debug->print("theta quad is: ");
+	_debug->println(quad);
 	// bring theta to quad 0
 	if (quad == 1) {
 	theta_divs = PI_DIVISIONS - theta_divs;
@@ -144,7 +144,8 @@ int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accura
 	else if (quad == 3) {
 	theta_divs = PI_DIVISIONS - theta_divs;
 	}
-
+	_debug->print("theta after quad0: ");
+	_debug->println(theta_divs);
 
 	// It's a binary search in the 0-1 interval, corresponding to 0-A
 	byte sin_guess = TRIG_UNITY >> 1;			// starting the guess from the middle: 1/2
@@ -194,7 +195,8 @@ void Transform::FFT(IntSignal& signal, uint8_t accuracy) {
 
 }
 
-int32_t Transform::unwind(int32_t theta_divs) {
+int32_t Transform::unwrap(int32_t theta_divs) {
+
 	while (theta_divs>TWOPI_DIVISIONS) {
 		theta_divs -= TWOPI_DIVISIONS;
 	}
@@ -202,6 +204,9 @@ int32_t Transform::unwind(int32_t theta_divs) {
 	while (theta_divs<0) {
 		theta_divs += TWOPI_DIVISIONS;
 	}
+
+	return theta_divs;
+
 }
 
 void Transform::debug(Stream& stream) {

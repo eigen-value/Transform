@@ -40,12 +40,13 @@ static const byte arcsin_data[128] =
 #include <Arduino.h>
 
 #define TRIG_ACCURACY_MAX 7
-#define TRIG_UNITY 128			// must be = 2^TRIG_ACCURACY_MAX
-#define SIGNAL_LEN_MAX 1024		// must be = TWOPI_DIVISIONS
+#define TRIG_UNITY 128				// must be = 2^TRIG_ACCURACY_MAX
+#define SIGNAL_LEN_MAX 1024			// must be = TWOPI_DIVISIONS
 #define TWOPI_DIVISIONS 1024
 #define PI_DIVISIONS 512
 #define HALFPI_DIVISIONS 256
 #define THREEHALFPI_DIVISIONS 768
+#define HALFPI_DIVISIONS_LOG2 8 	// used for finding quadrant
 
 
 class IntSignal {
@@ -76,7 +77,7 @@ class Transform {
 	uint16_t log2(uint16_t n);
 	int32_t approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy);
 	int32_t approx_cos_proj(int32_t A, int32_t theta_divs, uint8_t accuracy);
-	int32_t unwind(int32_t theta_divs);
+	int32_t unwrap(int32_t theta_divs);
 	void InverseBit(int32_t* v, uint16_t size);
 	void printSignal(IntSignal& signal);
 	
