@@ -195,7 +195,7 @@ void Transform::FFT(IntSignal& signal, uint8_t accuracy, FFTDirection dir) {
 	/* Scaling */
 
 	/* Bit reversal*/
-	InverseBit(signal.real, signal.getSamples());
+	InverseBit(signal.real, samples);
 	// if ifft do the same on .imag
 
 	/* FFT Butterfly products*/
@@ -209,37 +209,28 @@ void Transform::FFT(IntSignal& signal, uint8_t accuracy, FFTDirection dir) {
 		uint16_t theta = TWOPI_DIVISIONS;
 		for (uint16_t j = 0; j < l1; j++) { // butterfly-group cycle
 			for (uint16_t i = j; i < samples; i += l2) { // calculate butterflies with same weight (l2 distant)
-			uint16_t i1 = i + l1;
-			// double t1 = u1 * signal.real[i1] - u2 * signal.imag[i1];
-			// double t2 = u1 * signal.imag[i1] + u2 * signal.real[i1];
-
-			int32_t t1;
-			int32_t t2;
-			t1 = approx_cos_proj(signal.real[i1], theta, accuracy) - approx_sin_proj(signal.imag[i1], theta, accuracy);
-			t2 = approx_cos_proj(signal.imag[i1], theta, accuracy) + approx_sin_proj(signal.real[i1], theta, accuracy);
-			signal.real[i1] = signal.real[i] - t1;
-			signal.imag[i1] = signal.imag[i] - t2;
-			signal.real[i] += t1;
-			signal.imag[i] += t2;
+				uint16_t i1 = i + l1;
+				// calculating the butterfly products modifiers
+				int32_t t1;
+				int32_t t2;
+				t1 = approx_cos_proj(signal.real[i1], theta, accuracy) - approx_sin_proj(signal.imag[i1], theta, accuracy);
+				t2 = approx_cos_proj(signal.imag[i1], theta, accuracy) + approx_sin_proj(signal.real[i1], theta, accuracy);
+				signal.real[i1] = signal.real[i] - t1;
+				signal.imag[i1] = signal.imag[i] - t2;
+				signal.real[i] += t1;
+				signal.imag[i] += t2;
 			}
-			// application of rotation matrix [cos(th), -sin(th); sin(th), cos(th)] to get the next N-radix of 1
-			// double z = ((u1 * c1) - (u2 * c2));
-			// u2 = ((u1 * c2) + (u2 * c1));
-			// u1 = z;
+			// rotation of theta
 			if (dir == FFT_FORWARD) {
-			theta = theta-angle_span;
+				theta = theta-angle_span;
 			} else {
-			theta = theta+angle_span;
+				theta = theta+angle_span;
 			}
 		}
 
-		// halving the angle at every step
-		// c2 = sqrt((1.0 - c1) / 2.0);    // sin(theta/2)
-		// c1 = sqrt((1.0 + c1) / 2.0);    // cos(theta/2)
-		angle_span>>1;
-		// if (dir == FFT_FORWARD) {
-		//   c2 = -c2;   // remember W exponent is -j2pi/N
-		// }
+		// halving the angle span at every step
+		angle_span>>=1;
+
 	}
 
 	// Scaling for reverse transform /

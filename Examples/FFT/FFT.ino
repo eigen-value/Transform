@@ -27,10 +27,10 @@
 /*
 These values can be changed in order to evaluate the functions
 */
-const uint16_t samples = 64; //This value MUST ALWAYS be a power of 2
-const double signalFrequency = 1000;
+const uint16_t samples = 512; //This value MUST ALWAYS be a power of 2
+const double signalFrequency = 500;
 const double samplingFrequency = 5000;
-const int32_t amplitude = 100;
+const int32_t amplitude = 512;
 /*
 These are the input and output vectors
 Input vectors receive computed results from FFT
@@ -55,18 +55,21 @@ void loop()
     for (uint16_t i = 0; i < samples; i++)
     {
         int32_t angle = int32_t(TWOPI_DIVISIONS*((i*signalFrequency)/samplingFrequency));
-        real[i] = transformer.approx_sin_proj(amplitude, angle);
+        real[i] = int32_t(transformer.approx_cos_proj(amplitude, angle));
         imag[i] = 0;
     }
 
     IntSignal signal(real, imag, samples);
 
+    Serial.println("Before FFT");
     transformer.printSignal(signal);
 
+    Serial.println("--");
     unsigned long time_delta = millis();
     transformer.FFT(signal);
     time_delta = millis() - time_delta;
 
+    Serial.println("After FFT");
     transformer.printSignal(signal);
 
     Serial.print("FFT calculated in (ms): ");
