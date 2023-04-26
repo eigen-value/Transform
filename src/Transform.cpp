@@ -101,14 +101,23 @@ void Transform::InverseBit(int32_t* v, uint16_t size) {
 
 void Transform::printSignal(IntSignal& signal) {
 	
-	_debug->println("real | imag");
+	_debug->print("real = [");
 	for (uint16_t i=0; i<signal.getSamples(); i++) {
 		
 		_debug->print(signal.real[i]);
-		_debug->print(" | ");
-		_debug->println(signal.imag[i]);
+		_debug->print(", ");
 		
 	}
+	_debug->println("]");
+
+	_debug->print("imag = [");
+	for (uint16_t i=0; i<signal.getSamples(); i++) {
+		
+		_debug->print(signal.imag[i]);
+		_debug->print(", ");
+		
+	}
+	_debug->println("]");
 	
 }
 
@@ -124,28 +133,22 @@ int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accura
 		_debug->println(TRIG_ACCURACY_MAX);
 	}
 
-
-	// unwraping for lesser-than-0 bigger-than-2pi theta angles
+	// unwrapping for lesser-than-0 bigger-than-2pi theta angles
 	theta_divs = unwrap(theta_divs);
-	_debug->print("theta after unwrap: ");
-	_debug->println(theta_divs);
 
 	// Everything can be reduced to the 1st quadrant case (0-pi/2)
 	int32_t quad = theta_divs>>HALFPI_DIVISIONS_LOG2; // theta quadrant
-	_debug->print("theta quad is: ");
-	_debug->println(quad);
+
 	// bring theta to quad 0
 	if (quad == 1) {
-	theta_divs = PI_DIVISIONS - theta_divs;
+		theta_divs = PI_DIVISIONS - theta_divs;
 	}
 	else if (quad == 2) {
-	theta_divs = theta_divs - PI_DIVISIONS;
+		theta_divs = theta_divs - PI_DIVISIONS;
 	}
 	else if (quad == 3) {
-	theta_divs = PI_DIVISIONS - theta_divs;
+		theta_divs = TWOPI_DIVISIONS - theta_divs;
 	}
-	_debug->print("theta after quad0: ");
-	_debug->println(theta_divs);
 
 	// It's a binary search in the 0-1 interval, corresponding to 0-A
 	byte sin_guess = TRIG_UNITY >> 1;			// starting the guess from the middle: 1/2
@@ -180,18 +183,72 @@ int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accura
 }
 
 int32_t Transform::approx_cos_proj(int32_t A, int32_t theta_divs, uint8_t accuracy) {
-	theta_divs = TWOPI_DIVISIONS>>2 - theta_divs;		// cos(x) = sin(90-x)
+	return approx_sin_proj(A, HALFPI_DIVISIONS - theta_divs, accuracy);		// cos(x) = sin(90-x)
 }
 
-void Transform::FFT(IntSignal& signal, uint8_t accuracy) {
+void Transform::FFT(IntSignal& signal, uint8_t accuracy, FFTDirection dir) {
+
+
+	uint16_t samples = signal.getSamples();
+	uint16_t log2samples = log2(samples);
+
 	/* Scaling */
 
 	/* Bit reversal*/
 	InverseBit(signal.real, signal.getSamples());
 	// if ifft do the same on .imag
 
-	/* Butterfly products*/
+	/* FFT Butterfly products*/
+	uint16_t angle_span = PI_DIVISIONS;  // angle span to calculate all the N-radices of 1 (weights). It halves every cycle 180°, 90°, 45°...
+	uint16_t l2 = 1;
+	for (uint8_t loop = 0; (loop < log2samples); loop++) {  // in-place fft is made of log2(samples) steps
+		uint16_t l1 = l2;   // l1 is the butterfly span. It doubles every cycle l1 = 1,2,4,8... It is also the number of butterfly groups (same W)
+		l2 <<= 1;           // l2 is the distance between one butterfly and the next with same weight. doubles every cycle l2 = 2,4,8...
+		// double u1 = 1.0;
+		// double u2 = 0.0;
+		uint16_t theta = TWOPI_DIVISIONS;
+		for (uint16_t j = 0; j < l1; j++) { // butterfly-group cycle
+			for (uint16_t i = j; i < samples; i += l2) { // calculate butterflies with same weight (l2 distant)
+			uint16_t i1 = i + l1;
+			// double t1 = u1 * signal.real[i1] - u2 * signal.imag[i1];
+			// double t2 = u1 * signal.imag[i1] + u2 * signal.real[i1];
 
+			int32_t t1;
+			int32_t t2;
+			t1 = approx_cos_proj(signal.real[i1], theta, accuracy) - approx_sin_proj(signal.imag[i1], theta, accuracy);
+			t2 = approx_cos_proj(signal.imag[i1], theta, accuracy) + approx_sin_proj(signal.real[i1], theta, accuracy);
+			signal.real[i1] = signal.real[i] - t1;
+			signal.imag[i1] = signal.imag[i] - t2;
+			signal.real[i] += t1;
+			signal.imag[i] += t2;
+			}
+			// application of rotation matrix [cos(th), -sin(th); sin(th), cos(th)] to get the next N-radix of 1
+			// double z = ((u1 * c1) - (u2 * c2));
+			// u2 = ((u1 * c2) + (u2 * c1));
+			// u1 = z;
+			if (dir == FFT_FORWARD) {
+			theta = theta-angle_span;
+			} else {
+			theta = theta+angle_span;
+			}
+		}
+
+		// halving the angle at every step
+		// c2 = sqrt((1.0 - c1) / 2.0);    // sin(theta/2)
+		// c1 = sqrt((1.0 + c1) / 2.0);    // cos(theta/2)
+		angle_span>>1;
+		// if (dir == FFT_FORWARD) {
+		//   c2 = -c2;   // remember W exponent is -j2pi/N
+		// }
+	}
+
+	// Scaling for reverse transform /
+	if (dir != FFT_FORWARD) {
+		for (uint16_t i = 0; i < samples; i++) {
+			signal.real[i] /= samples;
+			signal.imag[i] /= samples;
+		}
+	}
 
 }
 

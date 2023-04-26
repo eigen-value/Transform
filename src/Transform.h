@@ -37,6 +37,10 @@ static const byte arcsin_data[128] =
   195, 198, 202, 206, 210, 215, 221, 227, 236
 };
 
+enum class FFTDirection { Reverse, Forward };
+#define FFT_FORWARD FFTDirection::Forward
+#define FFT_REVERSE FFTDirection::Reverse
+
 #include <Arduino.h>
 
 #define TRIG_ACCURACY_MAX 7
@@ -73,10 +77,10 @@ class Transform {
 	~Transform();
 
 	void debug(Stream&);
-	void FFT(IntSignal& signal, uint8_t accuracy);
+	void FFT(IntSignal& signal, uint8_t accuracy=5, FFTDirection dir=FFT_FORWARD);
 	uint16_t log2(uint16_t n);
-	int32_t approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy);
-	int32_t approx_cos_proj(int32_t A, int32_t theta_divs, uint8_t accuracy);
+	int32_t approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy=5);
+	int32_t approx_cos_proj(int32_t A, int32_t theta_divs, uint8_t accuracy=5);
 	int32_t unwrap(int32_t theta_divs);
 	void InverseBit(int32_t* v, uint16_t size);
 	void printSignal(IntSignal& signal);
