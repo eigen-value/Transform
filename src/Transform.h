@@ -51,7 +51,8 @@ enum class FFTDirection { Reverse, Forward };
 #define HALFPI_DIVISIONS 256
 #define THREEHALFPI_DIVISIONS 768
 #define HALFPI_DIVISIONS_LOG2 8 	// used for finding quadrant
-
+#define FFT_LIMIT_SWING 1024			// minimum signal swing to get best FFT precision
+#define FFT_LIMIT_SWING_LOG2 10
 
 class IntSignal {
 	
@@ -61,12 +62,14 @@ class IntSignal {
 	int32_t* real = nullptr;
 	int32_t* imag = nullptr;
 	void scale2(int8_t pow);
+	int32_t get__avg();
+	int32_t remove_avg();
 	uint16_t getSamples();
 
 	private:
 	uint16_t _samples;
 	int16_t _scale_pow = 0;		// !=0 if signal is scaled by a power of 2
-	int32_t _avg = 0;			// stored average. !=0 if signal avg has been removed
+	int32_t _avg = 0;			// stored average (real). !=0 if signal avg has been removed
 	
 };
 
@@ -82,7 +85,8 @@ class Transform {
 	int32_t approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy=5);
 	int32_t approx_cos_proj(int32_t A, int32_t theta_divs, uint8_t accuracy=5);
 	int32_t unwrap(int32_t theta_divs);
-	void InverseBit(int32_t* v, uint16_t size);
+	uint32_t swing(int32_t* v, uint16_t samples);
+	void InverseBit(int32_t* v, uint16_t samples);
 	void printSignal(IntSignal& signal);
 	
 	private:

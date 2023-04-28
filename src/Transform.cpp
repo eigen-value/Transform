@@ -41,15 +41,38 @@ void IntSignal::scale2(int8_t pow) {
 	if (pow < 0) {
 		for (uint16_t i=0; i<_samples; i++) {
 			real[i] = real[i]>>-pow;
+			imag[i] = imag[i]>>-pow;
 		}
+		_avg = _avg>>-pow;
 	} else if (pow > 0) {
 		for (uint16_t i=0; i<_samples; i++) {
 			real[i] = real[i]<<pow;
+			imag[i] = imag[i]<<pow;
 		}
+		_avg = _avg<<pow;
 	}
 	
 }
 
+int32_t IntSignal::get__avg() {
+	return _avg;
+}
+
+int32_t IntSignal::remove_avg() {
+
+	for (uint16_t i=0; i<_samples; i++) {
+		_avg+=real[i];
+	}
+
+	_avg/=_samples;
+
+	for (uint16_t i=0; i<_samples; i++) {
+		real[i]-=_avg;
+	}
+
+	return _avg;
+
+}
 
 uint16_t IntSignal::getSamples() {
 	return _samples;
@@ -86,13 +109,13 @@ uint32_t Transform::reverse_bits(uint32_t x, int bits) {
     return x >> (32 - bits);
 }
 
-void Transform::InverseBit(int32_t* v, uint16_t size) {
+void Transform::InverseBit(int32_t* v, uint16_t samples) {
 	
-	int log2_size = log2(size);
+	int log2_samples = log2(samples);
 
-	for (uint32_t i=0; i<size; i++) {
+	for (uint32_t i=0; i<samples; i++) {
 		int32_t temp = v[i];
-		uint32_t i_reverse = reverse_bits(i, log2_size);
+		uint32_t i_reverse = reverse_bits(i, log2_samples);
 		if (i>=i_reverse) {continue;} 
 		v[i] = v[i_reverse];
 		v[i_reverse] = temp;
@@ -193,13 +216,22 @@ void Transform::FFT(IntSignal& signal, uint8_t accuracy, FFTDirection dir) {
 	uint16_t samples = signal.getSamples();
 	uint16_t log2samples = log2(samples);
 
-	/* Scaling */
+	/* Scaling only for FFT_FORWARD */
+	if (dir == FFT_FORWARD) {
+		uint32_t real_swing = swing(signal.real, samples);
+		if (real_swing<FFT_LIMIT_SWING) {
+			signal.remove_avg();
+			signal.scale2(FFT_LIMIT_SWING_LOG2-log2(real_swing));
+		}
+	}
 
-	/* Bit reversal*/
+	/* Bit reversal */
 	InverseBit(signal.real, samples);
-	// if ifft do the same on .imag
+	if (dir == FFT_REVERSE) {
+		InverseBit(signal.imag, samples);
+	}
 
-	/* FFT Butterfly products*/
+	/* FFT Butterfly products */
 	uint16_t angle_span = PI_DIVISIONS;  // angle span to calculate all the N-radices of 1 (weights). It halves every cycle 180°, 90°, 45°...
 	uint16_t l2 = 1;
 	for (uint8_t loop = 0; (loop < log2samples); loop++) {  // in-place fft is made of log2(samples) steps
@@ -234,7 +266,7 @@ void Transform::FFT(IntSignal& signal, uint8_t accuracy, FFTDirection dir) {
 	}
 
 	// Scaling for reverse transform /
-	if (dir != FFT_FORWARD) {
+	if (dir == FFT_REVERSE) {
 		for (uint16_t i = 0; i < samples; i++) {
 			signal.real[i] /= samples;
 			signal.imag[i] /= samples;
@@ -254,6 +286,20 @@ int32_t Transform::unwrap(int32_t theta_divs) {
 	}
 
 	return theta_divs;
+
+}
+
+uint32_t Transform::swing(int32_t* v, uint16_t samples) {
+
+	int32_t max = v[0];
+	int32_t min = v[0];
+
+	for (uint16_t i=1; i<samples; i++) {
+		if (v[i] > max) { max = v[i];}
+		if (v[i] < min) { min = v[i];}
+	}
+
+	return max-min;
 
 }
 
