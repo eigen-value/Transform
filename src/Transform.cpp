@@ -90,9 +90,10 @@ void Transform::InverseBit(int32_t* v, uint16_t size) {
 	
 	int log2_size = log2(size);
 
-	for (uint16_t i=0; i<size>>1; i++) {
+	for (uint32_t i=0; i<size; i++) {
 		int32_t temp = v[i];
-		uint16_t i_reverse = reverse_bits(i, log2_size);
+		uint32_t i_reverse = reverse_bits(i, log2_size);
+		if (i>=i_reverse) {continue;} 
 		v[i] = v[i_reverse];
 		v[i_reverse] = temp;
 	}
@@ -123,10 +124,6 @@ void Transform::printSignal(IntSignal& signal) {
 
 int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy) {
 
-	if (theta_divs == 0 || theta_divs == PI_DIVISIONS || theta_divs == TWOPI_DIVISIONS) {return 0;}
-	if (theta_divs == HALFPI_DIVISIONS) {return A;}
-	if (theta_divs == THREEHALFPI_DIVISIONS) {return -A;}
-
 	if (accuracy > TRIG_ACCURACY_MAX) {
 		accuracy = TRIG_ACCURACY_MAX;
 		_debug->print("Transform::approx_sin_proj accuracy cannot be greater than ");
@@ -135,6 +132,10 @@ int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accura
 
 	// unwrapping for lesser-than-0 bigger-than-2pi theta angles
 	theta_divs = unwrap(theta_divs);
+
+	if (theta_divs == 0 || theta_divs == PI_DIVISIONS || theta_divs == TWOPI_DIVISIONS) {return 0;}
+	if (theta_divs == HALFPI_DIVISIONS) {return A;}
+	if (theta_divs == THREEHALFPI_DIVISIONS) {return -A;}
 
 	// Everything can be reduced to the 1st quadrant case (0-pi/2)
 	int32_t quad = theta_divs>>HALFPI_DIVISIONS_LOG2; // theta quadrant
@@ -204,8 +205,7 @@ void Transform::FFT(IntSignal& signal, uint8_t accuracy, FFTDirection dir) {
 	for (uint8_t loop = 0; (loop < log2samples); loop++) {  // in-place fft is made of log2(samples) steps
 		uint16_t l1 = l2;   // l1 is the butterfly span. It doubles every cycle l1 = 1,2,4,8... It is also the number of butterfly groups (same W)
 		l2 <<= 1;           // l2 is the distance between one butterfly and the next with same weight. doubles every cycle l2 = 2,4,8...
-		// double u1 = 1.0;
-		// double u2 = 0.0;
+
 		uint16_t theta = TWOPI_DIVISIONS;
 		for (uint16_t j = 0; j < l1; j++) { // butterfly-group cycle
 			for (uint16_t i = j; i < samples; i += l2) { // calculate butterflies with same weight (l2 distant)
