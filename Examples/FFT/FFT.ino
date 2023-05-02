@@ -37,6 +37,7 @@ Input vectors receive computed results from FFT
 */
 int32_t real[samples];
 int32_t imag[samples];
+uint32_t module[samples>>1];
 
 Transform transformer;
 
@@ -69,8 +70,23 @@ void loop()
     transformer.FFT(signal);
     time_delta = millis() - time_delta;
 
+    signal.getSignalModule(module);
+    uint16_t f_peak_index = getMaxIndex(module, samples>>1);
+
+    float signal_peak_freq = f_peak_index*(samplingFrequency/samples);
+
     Serial.println("After FFT");
     transformer.printSignal(signal);
+
+    Serial.print("module=[");
+    for (uint16_t i=0; i< samples>>1; i++) {
+        Serial.print(module[i]);
+        Serial.print(", ");
+    }
+    Serial.println("]");
+
+    Serial.print("found peak @(Hz): ");
+    Serial.println(signal_peak_freq);
 
     Serial.print("FFT calculated in (ms): ");
     Serial.println(time_delta);

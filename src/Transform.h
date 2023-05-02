@@ -37,6 +37,8 @@ static const byte arcsin_data[128] =
   195, 198, 202, 206, 210, 215, 221, 227, 236
 };
 
+static const uint8_t approx_module_cycles[20] = {7, 6, 6, 5, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2};
+
 enum class FFTDirection { Reverse, Forward };
 #define FFT_FORWARD FFTDirection::Forward
 #define FFT_REVERSE FFTDirection::Reverse
@@ -61,10 +63,12 @@ class IntSignal {
 	~IntSignal();
 	int32_t* real = nullptr;
 	int32_t* imag = nullptr;
+
 	void scale2(int8_t pow);
 	int32_t get__avg();
 	int32_t remove_avg();
 	uint16_t getSamples();
+	void getSignalModule(uint32_t* module);
 
 	private:
 	uint16_t _samples;
@@ -88,11 +92,14 @@ class Transform {
 	uint32_t swing(int32_t* v, uint16_t samples);
 	void InverseBit(int32_t* v, uint16_t samples);
 	void printSignal(IntSignal& signal);
-	
+
 	private:
 	uint32_t reverse_bits(uint32_t x, int bits);
 	Stream *_debug = nullptr;
 	
 };
+
+uint16_t getMaxIndex(uint32_t* v, uint16_t samples);
+uint32_t approx_module(int32_t a, int32_t b);
 
 #endif

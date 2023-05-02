@@ -78,6 +78,14 @@ uint16_t IntSignal::getSamples() {
 	return _samples;
 }
 
+void IntSignal::getSignalModule(uint32_t* module) {
+
+	for (uint16_t i=0; i<(_samples>>1); i++) {
+		module[i] = approx_module(real[i], imag[i]);
+	}
+
+}
+
 /* Transform class*/
 
 Transform::Transform(void) {
@@ -142,7 +150,7 @@ void Transform::printSignal(IntSignal& signal) {
 		
 	}
 	_debug->println("]");
-	
+
 }
 
 int32_t Transform::approx_sin_proj(int32_t A, int32_t theta_divs, uint8_t accuracy) {
@@ -305,4 +313,66 @@ uint32_t Transform::swing(int32_t* v, uint16_t samples) {
 
 void Transform::debug(Stream& stream) {
 	_debug = &stream;
+}
+
+uint16_t getMaxIndex(uint32_t* v, uint16_t samples) {
+
+	uint16_t max_index = 0;
+	uint32_t max = v[0];
+
+	for (uint16_t i=1; i<samples; i++) {
+
+		if (v[i] > max) {
+			max_index = i;
+			max = v[i];
+		}
+
+	}
+
+	return max_index;
+
+}
+
+uint32_t approx_module(int32_t a, int32_t b) {
+	// Works best for numbers > 16
+
+	if (a==0 && b == 0) {return 0;}
+
+	if (a<0) {a=-a;}
+	if (b<0) {b=-b;}
+
+	uint32_t max;
+	uint32_t min;
+
+	if (a>b) {
+		max = a;
+		min = b;
+	} else {
+		max = b;
+		min = a;
+	}
+
+	if (max > min+min+min)		// if max>3min assuming module = |max| has less than 5% error
+	{
+		return max;
+	} else {
+		uint8_t multiple = 0;
+		uint32_t min_over8 = min>>3;
+		if (min_over8==0) {min_over8 = 1;}
+		uint32_t min_over16 = min_over8>>1;
+
+		uint32_t temp = min;
+		while (temp<max){
+			temp += min_over8;
+			multiple++;
+		}
+
+		for (int i = 0; i < approx_module_cycles[multiple]; i++) {	// adding 'multple' times min/16 to adjust approximation
+			max = max + min_over16;
+		}
+
+		return max;
+
+	}
+
 }
