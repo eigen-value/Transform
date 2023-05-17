@@ -333,6 +333,23 @@ uint16_t getMaxIndex(uint32_t* v, uint16_t samples) {
 
 }
 
+float getApproxMaxPosition(uint32_t* v, uint16_t samples) {
+	/*
+	returns the position as a weighted average of three samples (max and 1st two neighbors)
+	*/
+
+	uint16_t idx = getMaxIndex(v, samples);
+
+	if (idx==0 || idx==samples-1) {return float(idx);}
+
+	float a = v[idx-1];
+	float b = v[idx];
+	float c = v[idx+1];
+
+	return (a * (idx - 1) + b * idx + c * (idx + 1)) / (a + b + c);
+
+}
+
 uint32_t approx_module(int32_t a, int32_t b) {
 	// Works best for numbers > 16
 

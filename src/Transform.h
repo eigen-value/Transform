@@ -100,6 +100,7 @@ class Transform {
 };
 
 uint16_t getMaxIndex(uint32_t* v, uint16_t samples);
+float getApproxMaxPosition(uint32_t* v, uint16_t samples);
 uint32_t approx_module(int32_t a, int32_t b);
 
 #endif
